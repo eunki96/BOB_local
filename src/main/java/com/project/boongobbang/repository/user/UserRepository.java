@@ -1,5 +1,6 @@
 package com.project.boongobbang.repository.user;
 
+import com.project.boongobbang.domain.dto.user.UserProfileDto;
 import com.project.boongobbang.domain.entity.user.User;
 import com.project.boongobbang.enums.Gender;
 import com.project.boongobbang.enums.SeoulGu;
@@ -29,36 +30,31 @@ public interface UserRepository extends JpaRepository<User, String> {
     Page<User> findAll(Pageable pageable);
 
 
-    @Query("SELECT u " +
+    @Query("SELECT new com.project.boongobbang.domain.dto.user.UserProfileDto(u.userPhotoUrl, u.userEmail, u.username, u.userMBTI, u.userBirth, u.userLocation, u.userCleanCount, u.userHasPet, u.userHasExperience, u.userIsSmoker, u.userIsNocturnal, u.userIntroduction, u.averageScore, u.userMobile) " +
             "FROM User u " +
-            "WHERE u.userType " +
-            "IN :userTypes " +
+            "WHERE u.userType IN :userTypes " +
             "AND u.userLocation = :location " +
             "AND u.userGender = :gender " +
             "AND ABS(YEAR(u.userBirth) - YEAR(:birth)) <= 4" +
             "AND u.isPaired = false")
-    List<User> findUsersByPriority1(@Param("userTypes") List<UserType> userTypes,
-                                    @Param("location") SeoulGu location,
-                                    @Param("gender") Gender gender,
-                                    @Param("birth") LocalDate birth);
+    List<UserProfileDto> findUserProfileDtosByPriority1(@Param("userTypes") List<UserType> userTypes, @Param("location") SeoulGu location, @Param("gender") Gender gender, @Param("birth") LocalDate birth);
 
-    @Query("SELECT u " +
+    @Query("SELECT new com.project.boongobbang.domain.dto.user.UserProfileDto(u.userPhotoUrl, u.userEmail, u.username, u.userMBTI, u.userBirth, u.userLocation, u.userCleanCount, u.userHasPet, u.userHasExperience, u.userIsSmoker, u.userIsNocturnal, u.userIntroduction, u.averageScore, u.userMobile) " +
             "FROM User u " +
             "WHERE u.userLocation = :location " +
             "AND u.userGender = :gender " +
-            "AND u NOT IN :excludedUsers AND u.isPaired = false")
-    List<User> findByUserLocationAndUserGenderExcludingUsers(
-            @Param("location") SeoulGu location,
-            @Param("gender") Gender gender,
-            @Param("excludedUsers") Set<User> excludedUsers);
+            "AND u.userEmail NOT IN :excludedEmails AND u.isPaired = false")
+    List<UserProfileDto> findUserProfileDtosByPriority2(@Param("location") SeoulGu location, @Param("gender") Gender gender, @Param("excludedEmails") List<String> excludedEmails);
 
-    @Query("SELECT u FROM User u WHERE u.userGender = :gender AND u NOT IN :excludedUsers AND u.isPaired = false")
-    List<User> findByUserGenderExcludingUsers(
-            @Param("gender") Gender gender,
-            @Param("excludedUsers") Set<User> excludedUsers);
+    @Query("SELECT new com.project.boongobbang.domain.dto.user.UserProfileDto(u.userPhotoUrl, u.userEmail, u.username, u.userMBTI, u.userBirth, u.userLocation, u.userCleanCount, u.userHasPet, u.userHasExperience, u.userIsSmoker, u.userIsNocturnal, u.userIntroduction, u.averageScore, u.userMobile) " +
+            "FROM User u " +
+            "WHERE u.userGender = :gender AND u.userEmail NOT IN :excludedEmails AND u.isPaired = false")
+    List<UserProfileDto> findUserProfileDtosByPriority3(@Param("gender") Gender gender, @Param("excludedEmails") List<String> excludedEmails);
 
-    @Query("SELECT u FROM User u WHERE u NOT IN :excludedUsers AND u.isPaired = false")
-    List<User> findAllExcludingUsers(
-            @Param("excludedUsers") Set<User> excludedUsers);
+    @Query("SELECT new com.project.boongobbang.domain.dto.user.UserProfileDto(u.userPhotoUrl, u.userEmail, u.username, u.userMBTI, u.userBirth, u.userLocation, u.userCleanCount, u.userHasPet, u.userHasExperience, u.userIsSmoker, u.userIsNocturnal, u.userIntroduction, u.averageScore, u.userMobile) " +
+            "FROM User u " +
+            "WHERE u.userEmail NOT IN :excludedEmails AND u.isPaired = false")
+    List<UserProfileDto> findUserProfileDtosByPriority4(@Param("excludedEmails") List<String> excludedEmails);
+
 
 }
