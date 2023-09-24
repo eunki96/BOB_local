@@ -2,6 +2,9 @@ package com.project.boongobbang.domain.dto.user;
 
 
 import com.project.boongobbang.domain.entity.user.User;
+import com.project.boongobbang.enums.CleanCount;
+import com.project.boongobbang.enums.MBTI;
+import com.project.boongobbang.enums.SeoulGu;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -75,6 +78,23 @@ public class UserProfileDto {
         this.userAverageScore = user.getAverageScore().setScale(0, RoundingMode.HALF_UP).intValue();
         // 룸메이트 관계라면 userMobile 반환
         this.userMobile = isRoommate ? user.getUserMobile() : null;
+    }
+
+    public UserProfileDto(String userPhotoUrl, String userEmail, String username, MBTI userMBTI, LocalDate userBirth, SeoulGu userLocation, CleanCount userCleanCount, Boolean userHasPet, Boolean userHasExperience, Boolean userIsSmoker, Boolean userIsNocturnal, String userIntroduction, BigDecimal averageScore, String userMobile) {
+        this.userPhotoUrl = userPhotoUrl;
+        this.userEmail = userEmail;
+        this.username = username;
+        this.userMBTI = userMBTI.toString();
+        this.userAge = LocalDate.now().getYear() - userBirth.getYear();
+        this.userLocation = userLocation.toString();
+        this.userCleanCount = userCleanCount.toString();
+        this.userHasPet = userHasPet;
+        this.userHasExperience = userHasExperience;
+        this.userIsSmoker = userIsSmoker;
+        this.userIsNocturnal = userIsNocturnal;
+        this.userIntroduction = userIntroduction;
+        this.userAverageScore = averageScore.setScale(0, RoundingMode.HALF_UP).intValue();
+        this.userMobile = userMobile;
     }
 }
 

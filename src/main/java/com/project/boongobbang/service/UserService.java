@@ -698,48 +698,51 @@ public class UserService {
 
     /*** 추천 알고리즘 관련 ***/
 
-
     //룸메이트 유저 추천
-    public List<UserProfileDto> recommendRoommates(User user) {
+    public List<UserProfileDto> recommendRoommates(User user1) {
         log.info("========== 추천 시작 ==========\n");
-        return findMatchingRoommates(user).stream()
-                .map(UserProfileDto::new)
-                .collect(Collectors.toList());
-    }
-
-    public List<User> findMatchingRoommates(User user1) {
-        Set<User> recommendedUsers = new LinkedHashSet<>();
+        Set<UserProfileDto> recommendedDtos = new LinkedHashSet<>();
 
         // 1st priority
         List<UserType> favoredUserTypes = userTypeFavorRepository.findFavoredUserTypesByUserType(user1.getUserType());
         log.info("Favored User Types: {}", favoredUserTypes);
+        recommendedDtos.addAll(userRepository.findUserProfileDtosByPriority1(favoredUserTypes, user1.getUserLocation(), user1.getUserGender(), user1.getUserBirth()));
 
-        List<User> priority1Users = userRepository.findUsersByPriority1(favoredUserTypes, user1.getUserLocation(), user1.getUserGender(), user1.getUserBirth());
-        recommendedUsers.addAll(priority1Users);
+        // For excluding users
+        List<String> excludedEmails = recommendedDtos.stream()
+                .map(UserProfileDto::getUserEmail)
+                .collect(Collectors.toList());
+        excludedEmails.add(user1.getUserEmail()); // exclude the requesting user itself
 
         // 2nd priority
-        if (recommendedUsers.size() < 50) {
-            List<User> priority2Users = userRepository.findByUserLocationAndUserGenderExcludingUsers(user1.getUserLocation(), user1.getUserGender(), recommendedUsers);
-            recommendedUsers.addAll(priority2Users);
+        if (recommendedDtos.size() < 50) {
+            List<UserProfileDto> secondPriorityDtos = userRepository.findUserProfileDtosByPriority2(user1.getUserLocation(), user1.getUserGender(), excludedEmails);
+            recommendedDtos.addAll(secondPriorityDtos);
+            excludedEmails.addAll(secondPriorityDtos.stream()
+                    .map(UserProfileDto::getUserEmail)
+                    .collect(Collectors.toList())); // Add 2nd priority users to the excluded list
         }
 
         // 3rd priority
-        if (recommendedUsers.size() < 50) {
-            List<User> priority3Users = userRepository.findByUserGenderExcludingUsers(user1.getUserGender(), recommendedUsers);
-            recommendedUsers.addAll(priority3Users);
+        if (recommendedDtos.size() < 50) {
+            List<UserProfileDto> thirdPriorityDtos = userRepository.findUserProfileDtosByPriority3(user1.getUserGender(), excludedEmails);
+            recommendedDtos.addAll(thirdPriorityDtos);
+            excludedEmails.addAll(thirdPriorityDtos.stream()
+                    .map(UserProfileDto::getUserEmail)
+                    .collect(Collectors.toList())); // Add 3rd priority users to the excluded list
         }
 
         // 4th priority
-        if (recommendedUsers.size() < 50) {
-            List<User> allUsers = userRepository.findAllExcludingUsers(recommendedUsers);
-            recommendedUsers.addAll(allUsers);
+        if (recommendedDtos.size() < 50) {
+            recommendedDtos.addAll(userRepository.findUserProfileDtosByPriority4(excludedEmails));
         }
 
-        // Remove the requesting user from the recommendation
-        recommendedUsers.remove(user1);
-
-        return new ArrayList<>(recommendedUsers);
+        return new ArrayList<>(recommendedDtos);
     }
+
+
+
+
 
 
 
