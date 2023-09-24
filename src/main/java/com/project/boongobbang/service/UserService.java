@@ -700,49 +700,47 @@ public class UserService {
 
 
     //룸메이트 유저 추천
-    public List<UserProfileDto> recommendRoommatesPageable(User user, int pageNumber) {
-        return findMatchingRoommatesPageable(user, pageNumber).stream()
+    public List<UserProfileDto> recommendRoommates(User user) {
+        log.info("========== 추천 시작 ==========\n");
+        return findMatchingRoommates(user).stream()
                 .map(UserProfileDto::new)
                 .collect(Collectors.toList());
     }
 
-    public List<User> findMatchingRoommatesPageable(User user1, int pageNumber) {
+    public List<User> findMatchingRoommates(User user1) {
         Set<User> recommendedUsers = new LinkedHashSet<>();
-        Pageable pageable = PageRequest.of(0, 50);
 
         // 1st priority
         List<UserType> favoredUserTypes = userTypeFavorRepository.findFavoredUserTypesByUserType(user1.getUserType());
         log.info("Favored User Types: {}", favoredUserTypes);
 
-        Page<User> priority1Users = userRepository.findUsersByPriority1(favoredUserTypes, user1.getUserLocation(), user1.getUserGender(), user1.getUserBirth(), pageable);
-        recommendedUsers.addAll(priority1Users.getContent());
+        List<User> priority1Users = userRepository.findUsersByPriority1(favoredUserTypes, user1.getUserLocation(), user1.getUserGender(), user1.getUserBirth());
+        recommendedUsers.addAll(priority1Users);
 
         // 2nd priority
         if (recommendedUsers.size() < 50) {
-            Page<User> priority2Users = userRepository.findByUserLocationAndUserGenderExcludingUsers(user1.getUserLocation(), user1.getUserGender(), recommendedUsers, pageable);
-            recommendedUsers.addAll(priority2Users.getContent());
+            List<User> priority2Users = userRepository.findByUserLocationAndUserGenderExcludingUsers(user1.getUserLocation(), user1.getUserGender(), recommendedUsers);
+            recommendedUsers.addAll(priority2Users);
         }
 
         // 3rd priority
         if (recommendedUsers.size() < 50) {
-            Page<User> priority3Users = userRepository.findByUserGenderExcludingUsers(user1.getUserGender(), recommendedUsers, pageable);
-            recommendedUsers.addAll(priority3Users.getContent());
+            List<User> priority3Users = userRepository.findByUserGenderExcludingUsers(user1.getUserGender(), recommendedUsers);
+            recommendedUsers.addAll(priority3Users);
         }
 
         // 4th priority
         if (recommendedUsers.size() < 50) {
-            Page<User> allUsers = userRepository.findAllExcludingUsers(recommendedUsers, pageable);
-            recommendedUsers.addAll(allUsers.getContent());
+            List<User> allUsers = userRepository.findAllExcludingUsers(recommendedUsers);
+            recommendedUsers.addAll(allUsers);
         }
 
-        // Slice the recommended users based on the pageNumber
-        int start = (pageNumber - 1) * 10;
-        int end = Math.min(start + 10, recommendedUsers.size());
+        // Remove the requesting user from the recommendation
+        recommendedUsers.remove(user1);
 
-        List<User> finalRecommendations = new ArrayList<>(recommendedUsers).subList(start, end);
-
-        return finalRecommendations;
+        return new ArrayList<>(recommendedUsers);
     }
+
 
 
 
@@ -770,4 +768,14 @@ public class UserService {
         }
 
     }
+
+    //전체 Notification 페이지로 검색
+    public List<NotificationResponseDto> getNotificationsByPage(int pageNumber){
+        Pageable pageable = PageRequest.of(pageNumber, 10);
+        Page<Notification> notificationPage = notificationRepository.findAll(pageable);
+        return notificationPage.stream()
+                .map(notification -> new NotificationResponseDto(notification))
+                .collect(Collectors.toList());
+    }
+
 }

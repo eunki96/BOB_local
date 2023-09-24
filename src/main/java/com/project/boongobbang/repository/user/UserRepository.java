@@ -29,37 +29,36 @@ public interface UserRepository extends JpaRepository<User, String> {
     Page<User> findAll(Pageable pageable);
 
 
-
     @Query("SELECT u " +
             "FROM User u " +
             "WHERE u.userType " +
             "IN :userTypes " +
             "AND u.userLocation = :location " +
             "AND u.userGender = :gender " +
-            "AND ABS(YEAR(u.userBirth) - YEAR(:birth)) <= 4")
-    Page<User> findUsersByPriority1(@Param("userTypes") List<UserType> userTypes,
+            "AND ABS(YEAR(u.userBirth) - YEAR(:birth)) <= 4" +
+            "AND u.isPaired = false")
+    List<User> findUsersByPriority1(@Param("userTypes") List<UserType> userTypes,
                                     @Param("location") SeoulGu location,
                                     @Param("gender") Gender gender,
-                                    @Param("birth") LocalDate birth,
-                                    Pageable pageable);
+                                    @Param("birth") LocalDate birth);
 
-    @Query("SELECT u FROM User u WHERE u.userLocation = :location AND u.userGender = :gender AND u NOT IN :excludedUsers")
-    Page<User> findByUserLocationAndUserGenderExcludingUsers(
+    @Query("SELECT u " +
+            "FROM User u " +
+            "WHERE u.userLocation = :location " +
+            "AND u.userGender = :gender " +
+            "AND u NOT IN :excludedUsers AND u.isPaired = false")
+    List<User> findByUserLocationAndUserGenderExcludingUsers(
             @Param("location") SeoulGu location,
             @Param("gender") Gender gender,
-            @Param("excludedUsers") Set<User> excludedUsers,
-            Pageable pageable);
+            @Param("excludedUsers") Set<User> excludedUsers);
 
-    @Query("SELECT u FROM User u WHERE u.userGender = :gender AND u NOT IN :excludedUsers")
-    Page<User> findByUserGenderExcludingUsers(
+    @Query("SELECT u FROM User u WHERE u.userGender = :gender AND u NOT IN :excludedUsers AND u.isPaired = false")
+    List<User> findByUserGenderExcludingUsers(
             @Param("gender") Gender gender,
-            @Param("excludedUsers") Set<User> excludedUsers,
-            Pageable pageable);
+            @Param("excludedUsers") Set<User> excludedUsers);
 
-    @Query("SELECT u FROM User u WHERE u NOT IN :excludedUsers")
-    Page<User> findAllExcludingUsers(
-            @Param("excludedUsers") Set<User> excludedUsers,
-            Pageable pageable);
-
+    @Query("SELECT u FROM User u WHERE u NOT IN :excludedUsers AND u.isPaired = false")
+    List<User> findAllExcludingUsers(
+            @Param("excludedUsers") Set<User> excludedUsers);
 
 }

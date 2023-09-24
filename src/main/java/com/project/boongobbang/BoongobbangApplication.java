@@ -16,6 +16,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.*;
 
@@ -109,7 +110,7 @@ public class BoongobbangApplication {
 
 						// 기본값
 						.ratedCount(0L)
-						.averageScore(null)
+						.averageScore(new BigDecimal(random.nextInt(6)))
 						.sentRoommateList(new ArrayList<>())
 						.receivedRoommateList(new ArrayList<>())
 						.receivedNotificationList(new ArrayList<>())

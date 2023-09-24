@@ -329,7 +329,7 @@ public class UserController {
 
 
 
-    @ApiOperation("로그인 유저에게 추천되는 룸메이트 목록 페이지별로 조회")
+    @ApiOperation("로그인 유저에게 추천되는 룸메이트 목록 조회")
     @ApiResponses(value = {
             @ApiResponse(code = 200,
                     message = "ROOMMATES_RECOMMENDED",
@@ -342,14 +342,13 @@ public class UserController {
                     message = "SERVER_ERROR")
     })
     @ResponseStatus(HttpStatus.OK)
-    @GetMapping("/recommendations/{pageNumber}")
-    public ResponseEntity<List<UserProfileDto>> getRecommendedRoommatesPageable(
-            @PathVariable int pageNumber) {
+    @GetMapping("/recommendations")
+    public ResponseEntity<List<UserProfileDto>> getRecommendedRoommatesPageable() {
 
         String userNaverId = userService.getLoginUserInfo();
         User user = userService.findUserByUserNaverId(userNaverId);
 
-        List<UserProfileDto> recommendedUsers = userService.recommendRoommatesPageable(user, pageNumber);
+        List<UserProfileDto> recommendedUsers = userService.recommendRoommates(user);
 
         return new ResponseEntity<>(recommendedUsers, HttpStatus.OK);
     }
