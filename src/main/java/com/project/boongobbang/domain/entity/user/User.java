@@ -17,6 +17,13 @@ import java.util.List;
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder(toBuilder = true)
+@Table(indexes = {
+        @Index(name = "idx_userType", columnList = "userType"),
+        @Index(name = "idx_userLocation", columnList = "userLocation"),
+        @Index(name = "idx_userGender", columnList = "userGender"),
+        @Index(name = "idx_userBirth", columnList = "userBirth"),
+        @Index(name = "idx_isPaired", columnList = "isPaired")
+})
 public class User {
     @Id
     @Column(name = "user_email")

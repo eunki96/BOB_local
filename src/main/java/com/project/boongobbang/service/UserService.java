@@ -248,7 +248,7 @@ public class UserService {
     //네이버 ID 로 User 검색
     public User findUserByUserNaverId(String userNaverId){
         log.info("========== 네이버 아이디 기반 유저 검색 시작 ==========\n");
-        User user = userRepository.findUserByUserNaverId(userNaverId)
+        User user = userRepository.findByUserNaverId(userNaverId)
                 .orElseThrow(
                         () -> new RuntimeException("[Error] 존재하지 않는 유저입니다")
                 );
