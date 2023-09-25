@@ -41,6 +41,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.persistence.EntityManager;
+import javax.persistence.OptimisticLockException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -162,6 +163,7 @@ public class UserService {
     //유저 정보 업데이트
     @Transactional
     public User updateUser(User user, UserUpdateRequestDto dto) {
+        log.info("========== 유저 수정 시작 ==========\n");
 
         if (!Objects.equals(user.getUserNickname(), dto.getUserNickname())) {
             user.setUserNickname(dto.getUserNickname());
@@ -196,13 +198,31 @@ public class UserService {
 
         user.setUserType(determineUserType(user));
 
-        userRepository.save(user);
+        try {
+            userRepository.save(user);
+        } catch (OptimisticLockException e) {
+            // 재시도 로직
+            retryUpdate(user);
+        }
         return user;
+    }
+    private void retryUpdate(User user) {
+        int retryCount = 3;
+        while (retryCount > 0) {
+            try {
+                userRepository.save(user);
+                return;
+            } catch (OptimisticLockException e) {
+                retryCount--;
+            }
+        }
+        throw new RuntimeException("데이터 업데이트에 실패했습니다.");
     }
 
     //유저 삭제
     @Transactional
     public UserProfileDto deleteUser(String userEmail) {
+        log.info("========== 유저 탈퇴 시작 ==========\n");
         User user = findUserByUserEmail(userEmail);
 
         notificationRepository.deleteNotificationsByUserEmail(userEmail);
@@ -217,6 +237,7 @@ public class UserService {
 
     //식별자로 User 검색
     public User findUserByUserEmail(String userEmail) {
+        log.info("========== 이메일 기반 유저 검색 ==========\n");
         User user = userRepository.findUserByUserEmail(userEmail)
                 .orElseThrow(
                         () -> new RuntimeException("[Error] 존재하지 않는 유저입니다")
@@ -226,6 +247,7 @@ public class UserService {
 
     //네이버 ID 로 User 검색
     public User findUserByUserNaverId(String userNaverId){
+        log.info("========== 네이버 아이디 기반 유저 검색 시작 ==========\n");
         User user = userRepository.findUserByUserNaverId(userNaverId)
                 .orElseThrow(
                         () -> new RuntimeException("[Error] 존재하지 않는 유저입니다")
@@ -235,6 +257,7 @@ public class UserService {
 
     //식별자로 Notification 검색
     public Notification findNotificationByNotificationId(Long notificationtId) {
+        log.info("========== 알림 식별자 기반 알림 검색 ==========\n");
         Notification notification;
         try {
             notification = notificationRepository.findNotificationByNotificationId(notificationtId);
@@ -246,6 +269,7 @@ public class UserService {
 
     //식별자로 UserScore 검색
     public UserScore findUserScoreByUserScoreId(Long userScoreId) {
+        log.info("========== 유저 점수 식별자 기반 유저 점수 검색 ==========\n");
         UserScore userScore;
         try {
             userScore = userScoreRepository.findUserScoreByUserScoreId(userScoreId);
@@ -257,6 +281,7 @@ public class UserService {
 
     //식별자로 Roommate 검색
     public Roommate findRoommateByRoommateId(Long roommateId) {
+        log.info("========== 룸메이트 식별자 기반 룸메이트 검색 시작 ==========\n");
         Roommate roommate;
         try {
             roommate = roommateRepository.findRoommateByRoommateId(roommateId);
@@ -279,6 +304,7 @@ public class UserService {
 
     //로그인 User 의 현재 룸메이트 검색
     public Roommate findRoommateByLoginUser(String userEmail) {
+        log.info("========== 로그인 유저 포함된 룸메이트 관계 검색 ==========\n");
         Roommate roommate;
         try {
             roommate = roommateRepository.findRoommateByLoginUser(userEmail)
@@ -293,6 +319,7 @@ public class UserService {
 
     //전체 User 페이지로 검색
     public List<UserSimpleDto> getUsersByPage(int pageNumber) {
+        log.info("========== 전체 유저 페이지로 검색 ==========\n");
         Pageable pageable = PageRequest.of(pageNumber, 10);
         Page<User> userPage = userRepository.findAll(pageable);
         return userPage.stream()
@@ -302,6 +329,7 @@ public class UserService {
 
     //전체 룸메이트 검색
     public List<RoommateResponseDto> getRoommateList(int pageNumber){
+        log.info("========== 전체 룸메이트 관계 페이지로 검색 ==========\n");
         Pageable pageable = PageRequest.of(pageNumber, 10);
         Page<Roommate> roommatePage = roommateRepository.findAll(pageable);
         return roommatePage.stream()
@@ -312,6 +340,7 @@ public class UserService {
 
     //유저의 현재 룸메이트 매칭상태 조회(메인 페이지)
     public List<UserProfileDto> getUserAndRoommate(User user){
+        log.info("========== 로그인 유저와 상대 룸메이트 검색 ==========\n");
         List<UserProfileDto> userProfileDtoList = new ArrayList<>();
         userProfileDtoList.add(new UserProfileDto(user));
         if(user.isPaired()){
@@ -330,6 +359,7 @@ public class UserService {
 
     //User 입력받아 해당 유저의 Notification 목록 페이지로 검색
     public List<NotificationResponseDto> getNotificationsByUserAndPage(User user, int pageNumber){
+        log.info("========== User 입력받아 해당 유저의 Notification 목록 페이지로 검색 ==========\n");
         Pageable pageable = PageRequest.of(pageNumber, 10);
         Page<Notification> notificationPage = notificationRepository.findNotificationsByCheckUser(user, pageable);
         return notificationPage.stream()
@@ -340,6 +370,7 @@ public class UserService {
 
     //User 입력받아 해당 유저의 이전 룸메이트 목록 페이지로 검색
     public List<HistoryResponseDto> returnUserPreviousRoommatesByPage(User user, int pageNumber) {
+        log.info("========== User 입력받아 해당 유저의 이전 룸메이트 목록 페이지로 검색 ==========\n");
         Pageable pageable = PageRequest.of(pageNumber, 10);
         Page<UserScore> userScorepage = userScoreRepository.findUserScoresByRatingUserOrderByCreatedAt(user, pageable);
         return userScoreRepository.findUserScoresByRatingUserOrderByCreatedAt(user).stream()
@@ -349,6 +380,7 @@ public class UserService {
 
     //UserScore 가 이미 평가했는지 여부 반환
     public boolean validateUserScoreRated(Long userScoreId){
+        log.info("========== UserScore 가 이미 평가했는지 여부 반환 ==========\n");
         UserScore userScore = findUserScoreByUserScoreId(userScoreId);
         return userScore.isRated();
     }
@@ -362,6 +394,7 @@ public class UserService {
     //User(본인) 입력받아 UserProfileDto 반환
     //무조건 모든 정보를 공개
     public UserProfileDto returnMyProfileDto(User user) {
+        log.info("========== 본인 UserProfileDto ==========\n");
         UserProfileDto dto = new UserProfileDto(user);
         return dto;
     }
@@ -369,6 +402,7 @@ public class UserService {
     //User 입력받아 UserProfileDto 반환
     public UserProfileDto returnUserProfileDto(User me, User user) {
         //룸메이트라면 userMobile 까지 공개
+        log.info("========== 다른 유저의 UserProfileDto ==========\n");
         boolean isRoommate = (roommateRepository.findRoommateByUsers(me.getUserEmail(), user.getUserEmail()) == null) ? false : true;
         UserProfileDto dto = new UserProfileDto(user, isRoommate);
         return dto;
@@ -382,6 +416,7 @@ public class UserService {
 
     //User 입력받아 UserResponseDto 반환
     public UserResponseDto returnUserDto(User user) {
+        log.info("========== User 입력받아 UserResponseDto 반환 ==========\n");
         UserResponseDto dto = new UserResponseDto(user);
         return dto;
     }
@@ -512,6 +547,7 @@ public class UserService {
 
     //룸메이트 요청 전송
     public Notification sendRoommateRequest(String senderUserEmail, String receiverUserEmail) {
+        log.info("========== 룸메이트 요청 전송 ==========\n");
 
         User senderUser = findUserByUserEmail(senderUserEmail);
         User receiverUser = findUserByUserEmail(receiverUserEmail);
@@ -530,6 +566,7 @@ public class UserService {
     }
     //존재하는 알림인지 확인
     public boolean validateIsExistingNotification(String senderUserEmail, String receiverUserEmail){
+        log.info("========== 존재하는 알림인지 확인 ==========\n");
         User senderUser = findUserByUserEmail(senderUserEmail);
         User receiverUser = findUserByUserEmail(receiverUserEmail);
 
@@ -537,6 +574,7 @@ public class UserService {
     }
     //요청 송/수신자가 이미 룸메이트가 있는지 확인
     public boolean validateIsPaired(String senderUserEmail, String receiverEmail){
+        log.info("========== 이미 송/수신자의 룸메이트가 있는지 확인 ==========\n");
         return (findUserByUserEmail(senderUserEmail).isPaired() || findUserByUserEmail(receiverEmail).isPaired());
     }
     public boolean validateIsPaired2(Notification notification){
@@ -546,6 +584,7 @@ public class UserService {
     //룸메이트 요청 수락
     @Transactional
     public Roommate acceptRoommateRequest(Long notificationId) {
+        log.info("========== 룸메이트 요청 수락 ==========\n");
         Notification notification = findNotificationByNotificationId(notificationId);
 
         User user1 = notification.getCheckUser();
@@ -627,12 +666,14 @@ public class UserService {
     //룸메이트 신청 거절, 알림 삭제
     @Transactional
     public void deleteNotification(Long notificationId) {
+        log.info("========== 룸메이트 신청 거절 / 알림 삭제 ==========\n");
         notificationRepository.deleteNotificationByNotificationId(notificationId);
     }
 
     //룸메이트 관계 종료
     @Transactional
     public void endRoommate(Long roommateId){
+        log.info("========== 룸메이트 관계 종료 ==========\n");
         Roommate roommate = findRoommateByRoommateId(roommateId);
         roommate.end();
         roommateRepository.save(roommate);
@@ -664,6 +705,7 @@ public class UserService {
     //룸메이트 평가
     @Transactional
     public void rateRoommate(Long userScoreId, int score) {
+        log.info("========== 룸메이트 평가 ==========\n");
         UserScore userScore = findUserScoreByUserScoreId(userScoreId);
         User roommate = userScore.getRatedUser();
 
@@ -677,6 +719,7 @@ public class UserService {
 
     // 평균 점수 업데이트
     private void updateAverageScore(User user) {
+        log.info("========== User 평균 점수 업데이트 ==========\n");
 
         //userId 갖는 모든 UserScore 의 score 합산
         BigDecimal totalScore = userScoreRepository.sumScoresByRatedUserEmail(user.getUserEmail());
@@ -774,6 +817,7 @@ public class UserService {
 
     //전체 Notification 페이지로 검색
     public List<NotificationResponseDto> getNotificationsByPage(int pageNumber){
+        log.info("========== 전체 Notification 페이지로 검색 ==========\n");
         Pageable pageable = PageRequest.of(pageNumber, 10);
         Page<Notification> notificationPage = notificationRepository.findAll(pageable);
         return notificationPage.stream()

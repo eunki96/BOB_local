@@ -119,4 +119,7 @@ public class User {
         this.isPaired = isPaired;
     }
 
+
+    @Version
+    private Long version;
 }
