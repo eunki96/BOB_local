@@ -744,6 +744,8 @@ public class UserService {
     //룸메이트 유저 추천
     public List<UserProfileDto> recommendRoommates(User user1) {
         log.info("========== 추천 시작 ==========\n");
+        long startTime = System.currentTimeMillis(); // 시작 시간 측정
+
         Set<UserProfileDto> recommendedDtos = new LinkedHashSet<>();
 
         // 1st priority
@@ -779,6 +781,11 @@ public class UserService {
         if (recommendedDtos.size() < 50) {
             recommendedDtos.addAll(userRepository.findUserProfileDtosByPriority4(excludedEmails));
         }
+
+        long endTime = System.currentTimeMillis(); // 종료 시간 측정
+        long duration = endTime - startTime; // 시간 차이 계산
+
+        log.info("Recommendation processing time: {} ms", duration); // 측정된 시간을 로그로 출력
 
         return new ArrayList<>(recommendedDtos);
     }

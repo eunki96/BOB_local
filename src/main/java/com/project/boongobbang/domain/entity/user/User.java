@@ -18,11 +18,11 @@ import java.util.List;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder(toBuilder = true)
 @Table(indexes = {
-        @Index(name = "idx_userType", columnList = "userType"),
-        @Index(name = "idx_userLocation", columnList = "userLocation"),
-        @Index(name = "idx_userGender", columnList = "userGender"),
-        @Index(name = "idx_userBirth", columnList = "userBirth"),
-        @Index(name = "idx_isPaired", columnList = "isPaired")
+        @Index(name = "idx_user_type", columnList = "user_type"),
+        @Index(name = "idx_user_location", columnList = "user_location"),
+        @Index(name = "idx_user_gender", columnList = "user_gender"),
+        @Index(name = "idx_user_birth", columnList = "user_birth"),
+        @Index(name = "idx_is_paired", columnList = "is_paired")
 })
 public class User {
     @Id
@@ -45,15 +45,19 @@ public class User {
     private String userMobile;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "user_gender")
     private Gender userGender;
 
     @Enumerated(EnumType.ORDINAL)
+    @Column(name = "user_clean_count")
     private CleanCount userCleanCount;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "user_location")
     private SeoulGu userLocation;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "user_mbti")
     private MBTI userMBTI;
 
     @Enumerated(EnumType.STRING)
