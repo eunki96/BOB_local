@@ -15,7 +15,6 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, String> {
@@ -24,10 +23,7 @@ public interface UserRepository extends JpaRepository<User, String> {
     Optional<User> findUserByUserEmail(String userEmail);
     void deleteUserByUserEmail(String userEmail);
 
-
-
     Page<User> findAll(Pageable pageable);
-
 
     @Query("SELECT new com.project.boongobbang.domain.dto.user.UserProfileDto(u.userPhotoUrl, u.userEmail, u.username, u.userMBTI, u.userBirth, u.userLocation, u.userCleanCount, u.userHasPet, u.userHasExperience, u.userIsSmoker, u.userIsNocturnal, u.userIntroduction, u.averageScore, u.userMobile) " +
             "FROM User u " +
@@ -54,6 +50,5 @@ public interface UserRepository extends JpaRepository<User, String> {
             "FROM User u " +
             "WHERE u.userEmail NOT IN :excludedEmails AND u.isPaired = false")
     List<UserProfileDto> findUserProfileDtosByPriority4(@Param("excludedEmails") List<String> excludedEmails);
-
 
 }

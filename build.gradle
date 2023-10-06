@@ -38,6 +38,9 @@ dependencies {
 	testImplementation 'org.springframework.security:spring-security-test'
 	implementation 'org.mockito:mockito-core:3.7.7'
 
+	// Bouncy Castle
+	implementation 'org.bouncycastle:bcprov-jdk15on:1.70'
+
 	//Jwt
 	implementation 'io.jsonwebtoken:jjwt:0.9.1'
 

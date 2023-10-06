@@ -14,7 +14,6 @@ import com.project.boongobbang.domain.entity.roommate.Roommate;
 import com.project.boongobbang.domain.entity.user.User;
 import com.project.boongobbang.domain.entity.user.UserScore;
 import com.project.boongobbang.enums.NotificationType;
-import com.project.boongobbang.enums.Role;
 import com.project.boongobbang.enums.UserType;
 import com.project.boongobbang.exception.AppException;
 import com.project.boongobbang.exception.ErrorCode;
@@ -29,7 +28,6 @@ import com.project.boongobbang.util.UserTypeFavor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -40,13 +38,7 @@ import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.persistence.EntityManager;
 import javax.persistence.OptimisticLockException;
-import javax.persistence.PersistenceContext;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
 import javax.transaction.Transactional;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -59,7 +51,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.project.boongobbang.enums.CleanCount.*;
-import static com.project.boongobbang.enums.UserType.CLEAN_1_2_E_T_SMOKER_NOCTURNAL;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
 @Slf4j
@@ -338,20 +329,17 @@ public class UserService {
 
     }
 
+    @Transactional
     //유저의 현재 룸메이트 매칭상태 조회(메인 페이지)
     public List<UserProfileDto> getUserAndRoommate(User user){
         log.info("========== 로그인 유저와 상대 룸메이트 검색 ==========\n");
         List<UserProfileDto> userProfileDtoList = new ArrayList<>();
         userProfileDtoList.add(new UserProfileDto(user));
         if(user.isPaired()){
-            User roommateUser = roommateRepository.findRoommatesByUserEmail(user.getUserEmail()).stream()
-                    .filter(roommate -> roommate.getEndDate() == null)
-                    .filter(roommate -> roommate.getUser1()==(user) || roommate.getUser2()==(user))
-                    .map(roommate -> roommate.getUser1().equals(user) ? roommate.getUser2() : roommate.getUser1())
-                    .findFirst()
-                    .orElseThrow(
-                            () -> new RuntimeException("getUserAndRoommate 에러")
-                    );
+            log.info("======= [isPaired == true] =======");
+            User roommateUser = roommateRepository.findCurrentRoommateByUserEmail(user.getUserEmail())
+                    .orElseThrow(() -> new RuntimeException("getUserAndRoommate 에러"));
+            log.info("======= [userProfileDtoList.add(new UserProfileDto(roommateUser));] =======");
             userProfileDtoList.add(new UserProfileDto(roommateUser));
         }
         return userProfileDtoList;

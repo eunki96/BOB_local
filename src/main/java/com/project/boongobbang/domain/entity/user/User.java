@@ -3,7 +3,9 @@ package com.project.boongobbang.domain.entity.user;
 import com.project.boongobbang.domain.entity.roommate.Notification;
 import com.project.boongobbang.domain.entity.roommate.Roommate;
 import com.project.boongobbang.enums.*;
+import com.project.boongobbang.util.CryptoUtil;
 import lombok.*;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
@@ -25,6 +27,10 @@ import java.util.List;
         @Index(name = "idx_is_paired", columnList = "is_paired")
 })
 public class User {
+
+    @Autowired
+    private transient CryptoUtil cryptoUtil;
+
     @Id
     @Column(name = "user_email")
     private String userEmail;
@@ -133,4 +139,21 @@ public class User {
 
     @Version
     private Long version;
+
+
+
+    @PrePersist
+    @PreUpdate
+    private void encryptFields() throws Exception {
+        this.userEmail = cryptoUtil.encrypt(this.userEmail);
+        this.userNaverId = cryptoUtil.encrypt(this.userNaverId);
+        this.userMobile = cryptoUtil.encrypt(this.userMobile);
+    }
+
+    @PostLoad
+    private void decryptFields() throws Exception {
+        this.userEmail = cryptoUtil.decrypt(this.userEmail);
+        this.userNaverId = cryptoUtil.decrypt(this.userNaverId);
+        this.userMobile = cryptoUtil.decrypt(this.userMobile);
+    }
 }
